@@ -12,8 +12,18 @@
 |---|---|
 | [`app/`](app/) | Приложение: модель карьера, интерфейс, симулятор, служба публикации в Ditto |
 | [`grafana/`](grafana/) | Дашборд Grafana для показателей смены |
-| [`presentation/`](presentation/) | Презентация, демо-ролик и снимки экрана |
+| [`presentation/`](presentation/) | Презентация, ролики с озвучкой, страницы о проекте, снимки экрана |
+| [`docs/`](docs/) | Конкурсная заявка, текст защиты, тексты апелляций |
 | [`compose.yml`](compose.yml) | Надстройка над платформой OpenEgiz (см. ниже) |
+
+### Ролики и страницы
+
+| Файл | Что это |
+|---|---|
+| `presentation/aktogay-demo-ru.mp4` | Демо карьера с озвучкой и музыкой, 2 мин 55 с |
+| `presentation/aktogay-ui-tour-ru.mp4` | Обзор интерфейса: все 12 разделов, 2 мин 3 с |
+| [`presentation/pages/`](presentation/pages/) | Три страницы о проекте, открываются без сервера |
+| [`presentation/narration/`](presentation/narration/) | Тексты озвучки и скрипты, которыми собраны ролики |
 
 Подробности по приложению — в [`app/README.md`](app/README.md), по датчикам — в
 [`app/SENSORS.md`](app/SENSORS.md), сравнение стратегий — в [`app/BENCHMARK.md`](app/BENCHMARK.md).

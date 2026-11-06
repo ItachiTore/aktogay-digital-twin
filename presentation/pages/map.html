@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Где двойник помогает</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="claude:viewport-fit-sides" content="true">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: dark;
+  --bg:#0c0f12; --bg2:#12171c; --panel:#161c22; --line:#263038;
+  --ink:#e8eef3; --dim:#93a3af; --faint:#6b7c88;
+  --amber:#f5a524; --smart:#d95926; --ore:#c08a4a; --rock:#4e5a63;
+  --ok:#49b67a; --bad:#e0564f; --cu:#7ec8e3;
+  --gut: max(16px, env(safe-area-inset-left));
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,sans-serif;
+  font-size:16px; line-height:1.55;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:0 var(--gut)}
+h1,h2,h3,.ttl{font-family:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif;font-weight:700;letter-spacing:-.01em}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+
+header{border-bottom:1px solid var(--line);background:linear-gradient(180deg,#131a20,#0c0f12)}
+header .wrap{padding-top:34px;padding-bottom:30px}
+.kicker{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);font-weight:600}
+h1{font-size:clamp(28px,5vw,46px);line-height:1.08;margin:12px 0 10px}
+header p{margin:0;max-width:62ch;color:var(--dim);font-size:clamp(15px,2vw,17px)}
+.two{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:6px 13px;font-size:13px;color:var(--dim);background:#10161b}
+.chip b{color:var(--ink);font-weight:600}
+.chip.s{border-color:#5a3426;color:#f0a98f}
+.chip.f{border-color:#2f3a42}
+
+main .wrap{padding-top:28px;padding-bottom:56px}
+
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.btn{font:inherit;font-size:14px;font-weight:600;color:var(--ink);background:#1b232a;border:1px solid var(--line);border-radius:10px;padding:9px 15px;cursor:pointer}
+.btn:hover{border-color:#3c4a54;background:#212b33}
+.btn.pri{background:var(--smart);border-color:var(--smart);color:#fff}
+.btn.pri:hover{background:#e8673a;border-color:#e8673a}
+.hint{font-size:13px;color:var(--faint)}
+
+.board{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr);gap:20px;align-items:start}
+@media (max-width:960px){.board{grid-template-columns:1fr}}
+
+.mapbox{background:#0a0d10;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+svg.scene{display:block;width:100%;height:auto}
+
+.zone{transition:opacity .35s ease}
+.scene.focus .zone{opacity:.14}
+.scene.focus .zone.on{opacity:1}
+.lbl{font-family:"IBM Plex Sans Condensed",sans-serif;font-size:13px;font-weight:600;fill:var(--dim)}
+.lbl.sm{font-size:11px;fill:var(--faint)}
+.num{font-family:"IBM Plex Mono",monospace;font-size:11px;fill:var(--faint)}
+
+.pin{cursor:pointer}
+.pin circle.dot{fill:#1a2128;stroke:var(--amber);stroke-width:2}
+.pin text{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:500;fill:var(--amber);text-anchor:middle;dominant-baseline:central}
+.pin:hover circle.dot{fill:#2a2113}
+.pin circle.halo{fill:var(--amber);opacity:0;transform-box:fill-box;transform-origin:center}
+.pin[aria-current="true"] circle.dot{fill:var(--amber);stroke:#ffd27a}
+.pin[aria-current="true"] text{fill:#1a1206}
+.pin[aria-current="true"] circle.halo{animation:ping 1.9s ease-out infinite}
+@keyframes ping{0%{opacity:.5;transform:scale(.6)}100%{opacity:0;transform:scale(2.4)}}
+.scene.focus .pin{opacity:.3}
+.scene.focus .pin[aria-current="true"]{opacity:1}
+
+.side{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;position:sticky;top:16px}
+@media (max-width:960px){.side{position:static}}
+.side .eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);font-weight:600}
+.side h2{font-size:clamp(20px,3vw,25px);margin:8px 0 14px;line-height:1.15}
+.blk{margin:0 0 14px}
+.blk .cap{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:4px}
+.blk p{margin:0;font-size:15px;color:#cfdae2}
+.blk.bad .cap{color:#c98a86}
+.blk.good .cap{color:#86c2a0}
+.facts{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0}
+.fact{border:1px solid var(--line);background:#10161b;border-radius:9px;padding:7px 11px;font-size:13px;color:var(--dim)}
+.fact b{display:block;font-family:"IBM Plex Mono",monospace;font-size:15px;color:var(--ink);font-weight:500}
+.nav{display:flex;align-items:center;gap:10px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.nav .btn{padding:7px 13px}
+.nav .btn:disabled{opacity:.35;cursor:default}
+.cnt{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--faint)}
+
+.list{margin-top:22px;border-top:1px solid var(--line);padding-top:22px}
+.list h3{font-size:18px;margin:0 0 12px}
+.rail{display:flex;flex-wrap:wrap;gap:8px}
+.rail button{font:inherit;font-size:13px;text-align:left;color:var(--dim);background:#10161b;border:1px solid var(--line);border-radius:9px;padding:8px 12px;cursor:pointer}
+.rail button:hover{border-color:#3c4a54;color:var(--ink)}
+.rail button[aria-current="true"]{border-color:var(--amber);color:var(--ink);background:#1d1a12}
+.rail button .n{font-family:"IBM Plex Mono",monospace;color:var(--amber);margin-right:7px}
+
+.viewtabs{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.viewtabs button{font:inherit;font-size:13px;font-weight:600;color:var(--dim);background:#10161b;border:0;padding:9px 16px;cursor:pointer}
+.viewtabs button[aria-pressed="true"]{background:var(--amber);color:#1a1206}
+#stage3d{display:block;position:relative;width:100%;background:#aab9c3;min-height:120px;cursor:grab;touch-action:pan-y}
+.lbl3d{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lbl3d span{position:absolute;top:0;left:0;white-space:nowrap;font-family:"IBM Plex Sans Condensed",sans-serif;font-size:11px;font-weight:600;letter-spacing:.02em;color:#dff3f7;background:rgba(10,32,38,.72);border:1px solid rgba(126,200,227,.35);border-radius:5px;padding:2px 7px;transition:opacity .25s ease;opacity:0}
+#stage3d:active{cursor:grabbing}
+svg.scene{display:none}
+.mapbox.svgmode svg.scene{display:block}
+.mapbox.svgmode #stage3d{display:none}
+body.no3d svg.scene{display:block}
+body.no3d #stage3d{display:none}
+body.no3d .viewtabs{display:none}
+@media (max-width:640px){.lbl3d span{font-size:10px;padding:1px 5px}}
+.nowebgl{margin:0;padding:14px 16px;font-size:13px;color:var(--faint)}
+footer{border-top:1px solid var(--line);background:#0a0d10}
+footer .wrap{padding:22px 0 34px;color:var(--faint);font-size:13px}
+footer a{color:var(--dim)}
+
+@media (prefers-reduced-motion:reduce){
+  .pin circle.halo{animation:none}
+  .zone{transition:none}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="kicker">Цифровой двойник карьера Актогай · команда 037</div>
+    <h1>Где на руднике двойник решает проблему</h1>
+    <p>Одна смена, один рудник. Карьер живой: самосвалы идут по спиральному съезду, экскаваторы грузят, мельницы крутятся. Девять точек — это девять мест, где что-то срывается, и видно, что двойник с этим делает. Нажмите точку или включите показ по порядку. Кнопка «Схема» переключает на плоский план — как 2D в самом стенде.</p>
+    <div class="two">
+      <span class="chip s"><b>smart</b> — реальная работа карьера, умная диспетчеризация</span>
+      <span class="chip f"><b>fixed</b> — та же смена без системы, теневой расчёт</span>
+      <span class="chip">158 двойников в Eclipse Ditto</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <div class="bar">
+      <button class="btn pri" id="play">▶ Показать по порядку</button>
+      <div class="viewtabs"><button id="t3d" aria-pressed="true">3D</button><button id="t2d" aria-pressed="false">Схема</button></div>
+      <button class="btn" id="reset">Весь рудник</button>
+      <span class="hint" id="hint">Стрелки ← → тоже переключают</span>
+    </div>
+
+    <div class="board">
+      <div class="mapbox" id="mapbox">
+        <div id="stage3d"></div>
+        <p id="no3d" class="nowebgl" hidden>Браузер не даёт WebGL — показана схема. В самом стенде на этот случай тоже есть переход на 2D.</p>
+        <svg class="scene" id="scene" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1000 640" role="img" aria-label="Схема карьера Актогай: три выработки, дробилка, склад дроблёной руды, фабрика, хвостохранилище, кучное выщелачивание, завод SX-EW, отвалы, гараж, подстанция, КПП">
+          <defs>
+            <linearGradient id="gpit" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#2a2420"/><stop offset="1" stop-color="#15181b"/>
+            </linearGradient>
+            <linearGradient id="gpond" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#1d3b46"/><stop offset="1" stop-color="#15272e"/>
+            </linearGradient>
+            <marker id="arw" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0 0 L10 5 L0 10 z" fill="#3b4751"/>
+            </marker>
+          </defs>
+
+          <rect x="0" y="0" width="1000" height="640" fill="#0a0d10"/>
+
+          <!-- дороги -->
+          <g class="zone" id="z-roads">
+            <path id="rdCrush" d="M330 332 L452 358" fill="none" stroke="#2c363e" stroke-width="9" stroke-linecap="round"/>
+            <path id="rdLeach" d="M332 296 C430 268 490 214 612 184" fill="none" stroke="#2c363e" stroke-width="8" stroke-linecap="round"/>
+            <path id="rdDumpW" d="M248 444 C182 500 104 478 62 430" fill="none" stroke="#2c363e" stroke-width="8" stroke-linecap="round"/>
+            <path id="rdDumpN" d="M226 92 C300 70 352 76 404 92" fill="none" stroke="#2c363e" stroke-width="8" stroke-linecap="round"/>
+            <path id="rdGar" d="M288 412 L300 546" fill="none" stroke="#2c363e" stroke-width="7" stroke-linecap="round"/>
+            <path d="M470 392 L470 470 L745 470 L745 540" fill="none" stroke="#1e262c" stroke-width="5" stroke-dasharray="7 7"/>
+            <path d="M880 560 L955 560" fill="none" stroke="#1e262c" stroke-width="5" stroke-dasharray="7 7"/>
+            <text class="lbl sm" x="236" y="470">южная объездная</text>
+            <text class="lbl sm" x="430" y="236">магистраль к выщелачиванию</text>
+          </g>
+
+          <!-- выработки -->
+          <g class="zone" id="z-pits">
+            <ellipse cx="208" cy="342" rx="152" ry="104" fill="url(#gpit)" stroke="#39322b" stroke-width="2"/>
+            <ellipse cx="208" cy="342" rx="112" ry="76" fill="none" stroke="#332c26" stroke-width="2"/>
+            <ellipse cx="208" cy="342" rx="72" ry="48" fill="none" stroke="#332c26" stroke-width="2"/>
+            <ellipse cx="208" cy="342" rx="34" ry="22" fill="#0e1114" stroke="#332c26" stroke-width="2"/>
+            <ellipse cx="146" cy="138" rx="80" ry="50" fill="url(#gpit)" stroke="#39322b" stroke-width="2"/>
+            <ellipse cx="146" cy="138" rx="42" ry="26" fill="#0e1114" stroke="#332c26" stroke-width="2"/>
+            <ellipse cx="128" cy="522" rx="86" ry="48" fill="url(#gpit)" stroke="#39322b" stroke-width="2"/>
+            <ellipse cx="128" cy="522" rx="44" ry="24" fill="#0e1114" stroke="#332c26" stroke-width="2"/>
+            <text class="lbl" x="208" y="346" text-anchor="middle">главный карьер</text>
+            <text class="lbl sm" x="208" y="364" text-anchor="middle">1,7 × 1,1 км · 230 м</text>
+            <text class="lbl sm" x="146" y="142" text-anchor="middle">северо-западный</text>
+            <text class="lbl sm" x="128" y="526" text-anchor="middle">юго-западный</text>
+          </g>
+
+          <!-- экскаваторы -->
+          <g class="zone" id="z-exc">
+            <g transform="translate(142,308)"><rect x="-11" y="-8" width="22" height="16" rx="3" fill="var(--amber)"/><path d="M11 -4 L30 -14 L34 -8 L14 2 z" fill="#b87d1c"/></g>
+            <g transform="translate(262,384)"><rect x="-11" y="-8" width="22" height="16" rx="3" fill="var(--amber)"/><path d="M-11 -4 L-30 -14 L-34 -8 L-14 2 z" fill="#b87d1c"/></g>
+            <g transform="translate(236,266)"><rect x="-10" y="-7" width="20" height="14" rx="3" fill="#9aa6ae"/><path d="M10 -4 L27 -13 L31 -7 L13 1 z" fill="#6d777e"/></g>
+            <g transform="translate(118,150)"><rect x="-10" y="-7" width="20" height="14" rx="3" fill="var(--ore)"/><path d="M10 -4 L27 -13 L31 -7 L13 1 z" fill="#8d6434"/></g>
+            <g transform="translate(112,534)"><rect x="-10" y="-7" width="20" height="14" rx="3" fill="#9aa6ae"/><path d="M10 -4 L27 -13 L31 -7 L13 1 z" fill="#6d777e"/></g>
+            <text class="lbl sm" x="300" y="258">5 экскаваторов</text>
+          </g>
+
+          <!-- самосвалы -->
+          <g class="zone" id="z-trucks">
+            <g><rect x="-9" y="-6" width="18" height="12" rx="2.5" fill="var(--ore)"/><rect x="4" y="-6" width="6" height="12" rx="2" fill="#e8dcc8"/>
+              <animateMotion dur="11s" repeatCount="indefinite" rotate="auto"><mpath href="#rdCrush" xlink:href="#rdCrush"/></animateMotion></g>
+            <g><rect x="-9" y="-6" width="18" height="12" rx="2.5" fill="var(--ore)"/><rect x="4" y="-6" width="6" height="12" rx="2" fill="#e8dcc8"/>
+              <animateMotion dur="11s" begin="-3.7s" repeatCount="indefinite" rotate="auto"><mpath href="#rdCrush" xlink:href="#rdCrush"/></animateMotion></g>
+            <g><rect x="-9" y="-6" width="18" height="12" rx="2.5" fill="var(--ore)"/><rect x="4" y="-6" width="6" height="12" rx="2" fill="#e8dcc8"/>
+              <animateMotion dur="11s" begin="-7.4s" repeatCount="indefinite" rotate="auto"><mpath href="#rdCrush" xlink:href="#rdCrush"/></animateMotion></g>
+            <g><rect x="-9" y="-6" width="18" height="12" rx="2.5" fill="#39434b"/><rect x="4" y="-6" width="6" height="12" rx="2" fill="#cfd8de"/>
+              <animateMotion dur="11s" begin="-1.6s" keyPoints="1;0" keyTimes="0;1" calcMode="linear" repeatCount="indefinite" rotate="auto"><mpath href="#rdCrush" xlink:href="#rdCrush"/></animateMotion></g>
+            <g><rect x="-9" y="-6" width="18" height="12" rx="2.5" fill="#39434b"/><rect x="4" y="-6" width="6" height="12" rx="2" fill="#cfd8de"/>
+              <animateMotion dur="11s" begin="-6.2s" keyPoints="1;0" keyTimes="0;1" calcMode="linear" repeatCount="indefinite" rotate="auto"><mpath href="#rdCrush" xlink:href="#rdCrush"/></animateMotion></g>
+
+            <g><rect x="-9" y="-6" width="18" height="12" rx="2.5" fill="var(--ore)"/><rect x="4" y="-6" width="6" height="12" rx="2" fill="#e8dcc8"/>
+              <animateMotion dur="15s" repeatCount="indefinite" rotate="auto"><mpath href="#rdLeach" xlink:href="#rdLeach"/></animateMotion></g>
+            <g><rect x="-9" y="-6" width="18" height="12" rx="2.5" fill="#39434b"/><rect x="4" y="-6" width="6" height="12" rx="2" fill="#cfd8de"/>
+              <animateMotion dur="15s" begin="-8s" keyPoints="1;0" keyTimes="0;1" calcMode="linear" repeatCount="indefinite" rotate="auto"><mpath href="#rdLeach" xlink:href="#rdLeach"/></animateMotion></g>
+
+            <g><rect x="-9" y="-6" width="18" height="12" rx="2.5" fill="var(--rock)"/><rect x="4" y="-6" width="6" height="12" rx="2" fill="#cfd8de"/>
+              <animateMotion dur="13s" repeatCount="indefinite" rotate="auto"><mpath href="#rdDumpW" xlink:href="#rdDumpW"/></animateMotion></g>
+            <g><rect x="-9" y="-6" width="18" height="12" rx="2.5" fill="#39434b"/><rect x="4" y="-6" width="6" height="12" rx="2" fill="#cfd8de"/>
+              <animateMotion dur="13s" begin="-6.5s" keyPoints="1;0" keyTimes="0;1" calcMode="linear" repeatCount="indefinite" rotate="auto"><mpath href="#rdDumpW" xlink:href="#rdDumpW"/></animateMotion></g>
+
+            <g><rect x="-9" y="-6" width="18" height="12" rx="2.5" fill="var(--rock)"/><rect x="4" y="-6" width="6" height="12" rx="2" fill="#cfd8de"/>
+              <animateMotion dur="14s" begin="-2s" repeatCount="indefinite" rotate="auto"><mpath href="#rdDumpN" xlink:href="#rdDumpN"/></animateMotion></g>
+            <g><rect x="-9" y="-6" width="18" height="12" rx="2.5" fill="#39434b"/><rect x="4" y="-6" width="6" height="12" rx="2" fill="#cfd8de"/>
+              <animateMotion dur="14s" begin="-9s" keyPoints="1;0" keyTimes="0;1" calcMode="linear" repeatCount="indefinite" rotate="auto"><mpath href="#rdDumpN" xlink:href="#rdDumpN"/></animateMotion></g>
+            <text class="lbl sm" x="366" y="330">20 самосвалов 220 т</text>
+          </g>
+
+          <!-- отвалы -->
+          <g class="zone" id="z-dumps">
+            <path d="M14 430 L54 398 L94 430 z" fill="#232a2f" stroke="#333d44"/>
+            <path d="M398 104 L434 76 L470 104 z" fill="#232a2f" stroke="#333d44"/>
+            <text class="lbl sm" x="54" y="446" text-anchor="middle">отвал</text>
+            <text class="lbl sm" x="434" y="120" text-anchor="middle">отвалы вскрыши</text>
+          </g>
+
+          <!-- дробилка -->
+          <g class="zone" id="z-crusher">
+            <rect x="452" y="340" width="56" height="42" rx="6" fill="var(--panel)" stroke="#39454e" stroke-width="2"/>
+            <path d="M462 348 L498 348 L488 366 L472 366 z" fill="var(--ore)" opacity=".8"/>
+            <rect x="466" y="368" width="28" height="7" rx="2" fill="#39434b"/>
+            <text class="lbl" x="480" y="398" text-anchor="middle">дробилка</text>
+            <text class="lbl sm" x="480" y="412" text-anchor="middle">приёмный бункер</text>
+          </g>
+
+          <!-- конвейер + склад -->
+          <g class="zone" id="z-stock">
+            <path d="M510 362 L556 362" fill="none" stroke="#39434b" stroke-width="5" marker-end="url(#arw)"/>
+            <path d="M556 384 L596 384 L576 344 z" fill="var(--ore)" opacity=".55" stroke="#8d6434"/>
+            <text class="lbl" x="576" y="404" text-anchor="middle">склад руды</text>
+            <text class="lbl sm" x="576" y="418" text-anchor="middle">буфер ~1,5 ч</text>
+          </g>
+
+          <!-- фабрика -->
+          <g class="zone" id="z-plant">
+            <path d="M598 368 L646 368" fill="none" stroke="#39434b" stroke-width="5" marker-end="url(#arw)"/>
+            <rect x="648" y="332" width="92" height="62" rx="7" fill="var(--panel)" stroke="#39454e" stroke-width="2"/>
+            <circle cx="670" cy="352" r="9" fill="#2e3a42" stroke="#4a5760"/>
+            <circle cx="692" cy="352" r="9" fill="#2e3a42" stroke="#4a5760"/>
+            <rect x="660" y="370" width="68" height="8" rx="3" fill="#2e3a42"/>
+            <rect x="712" y="340" width="20" height="24" rx="3" fill="#2e3a42" stroke="#4a5760"/>
+            <text class="lbl" x="694" y="410" text-anchor="middle">фабрика</text>
+            <text class="lbl sm" x="694" y="424" text-anchor="middle">мельницы · флотация</text>
+          </g>
+
+          <!-- концентрат -->
+          <g class="zone" id="z-conc">
+            <path d="M742 350 L792 322" fill="none" stroke="#39434b" stroke-width="4" marker-end="url(#arw)"/>
+            <rect x="794" y="294" width="64" height="30" rx="5" fill="#15202a" stroke="#2f4653" stroke-width="2"/>
+            <text class="lbl sm" x="826" y="313" text-anchor="middle" fill="var(--cu)">концентрат</text>
+            <text class="lbl sm" x="826" y="338" text-anchor="middle">ж/д на плавку</text>
+          </g>
+
+          <!-- хвостохранилище -->
+          <g class="zone" id="z-tails">
+            <path d="M740 382 L792 420" fill="none" stroke="#39434b" stroke-width="4" marker-end="url(#arw)"/>
+            <path d="M796 424 L960 424 L960 496 L796 496 z" fill="url(#gpond)" stroke="#2f4653" stroke-width="2"/>
+            <path d="M796 424 L960 424" fill="none" stroke="#49616d" stroke-width="3"/>
+            <text class="lbl" x="878" y="456" text-anchor="middle">хвостохранилище</text>
+            <text class="lbl sm" x="878" y="472" text-anchor="middle">пруд · запас до гребня</text>
+          </g>
+
+          <!-- выщелачивание -->
+          <g class="zone" id="z-leach">
+            <rect x="612" y="156" width="46" height="34" rx="4" fill="#1b2420" stroke="#36473c" stroke-width="2"/>
+            <rect x="662" y="156" width="46" height="34" rx="4" fill="#1b2420" stroke="#36473c" stroke-width="2"/>
+            <path d="M620 166 h30 M620 174 h30 M620 182 h30 M670 166 h30 M670 174 h30 M670 182 h30" stroke="#49b67a" stroke-width="1.5" opacity=".6"/>
+            <text class="lbl" x="660" y="146" text-anchor="middle">кучное выщелачивание</text>
+            <text class="lbl sm" x="660" y="206" text-anchor="middle">орошение карт</text>
+          </g>
+
+          <!-- SX-EW -->
+          <g class="zone" id="z-sx">
+            <path d="M710 172 L764 172" fill="none" stroke="#39434b" stroke-width="4" marker-end="url(#arw)"/>
+            <rect x="766" y="150" width="74" height="44" rx="6" fill="var(--panel)" stroke="#39454e" stroke-width="2"/>
+            <path d="M776 162 h54 M776 172 h54 M776 182 h54" stroke="var(--cu)" stroke-width="2" opacity=".65"/>
+            <text class="lbl" x="803" y="140" text-anchor="middle">завод SX-EW</text>
+            <text class="lbl sm" x="803" y="210" text-anchor="middle">катодная медь</text>
+          </g>
+
+          <!-- гараж -->
+          <g class="zone" id="z-garage">
+            <rect x="256" y="548" width="88" height="46" rx="6" fill="var(--panel)" stroke="#39454e" stroke-width="2"/>
+            <path d="M268 560 h20 M268 572 h20 M268 584 h20" stroke="#4a5760" stroke-width="3"/>
+            <circle cx="322" cy="566" r="7" fill="#2e3a42" stroke="var(--amber)" stroke-width="1.5"/>
+            <text class="lbl" x="300" y="614" text-anchor="middle">гараж · АЗС · РМЦ</text>
+          </g>
+
+          <!-- подстанция -->
+          <g class="zone" id="z-power">
+            <rect x="714" y="540" width="62" height="40" rx="5" fill="var(--panel)" stroke="#39454e" stroke-width="2"/>
+            <path d="M745 548 l-8 14 h7 l-5 12 12 -16 h-7 z" fill="var(--amber)"/>
+            <text class="lbl" x="745" y="600" text-anchor="middle">подстанция 35/6 кВ</text>
+          </g>
+
+          <!-- КПП -->
+          <g class="zone" id="z-kpp">
+            <rect x="936" y="540" width="40" height="40" rx="5" fill="var(--panel)" stroke="#39454e" stroke-width="2"/>
+            <path d="M940 556 h32" stroke="var(--bad)" stroke-width="3"/>
+            <text class="lbl" x="956" y="600" text-anchor="middle">КПП</text>
+          </g>
+
+          <!-- метеостанция -->
+          <g class="zone" id="z-weather">
+            <path d="M392 500 L392 456" stroke="#4a5760" stroke-width="3"/>
+            <circle cx="392" cy="452" r="5" fill="var(--cu)"/>
+            <path d="M376 452 h-10 M408 452 h10" stroke="#4a5760" stroke-width="2"/>
+            <text class="lbl sm" x="392" y="518" text-anchor="middle">метеостанция</text>
+          </g>
+
+          <!-- точки -->
+          <g id="pins"></g>
+        </svg>
+      </div>
+
+      <aside class="side">
+        <div class="eyebrow" id="eyebrow">Точка 01</div>
+        <h2 id="ttl">—</h2>
+        <div class="blk bad"><div class="cap" id="cap1">Что идёт не так</div><p id="bad">—</p></div>
+        <div class="blk"><div class="cap" id="cap2">Что делает двойник</div><p id="act">—</p></div>
+        <div class="blk good"><div class="cap" id="cap3">Что это даёт</div><p id="res">—</p></div>
+        <div class="facts" id="facts"></div>
+        <div class="nav">
+          <button class="btn" id="prev">←</button>
+          <button class="btn" id="next">→</button>
+          <span class="cnt" id="cnt">01 / 10</span>
+        </div>
+      </aside>
+    </div>
+
+    <div class="list">
+      <h3>Все десять точек</h3>
+      <div class="rail" id="rail"></div>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    Цифры — из прогона модели на 20 сменах (октябрь по климату Актогая, 20 самосвалов). Схема повторяет расположение объектов настоящего Актогая: контур карьера из OpenStreetMap, дробилка у головы реального конвейера, площадка выщелачивания за восточным бортом. Команда 037, конкурс «Цифровой рудник на OpenEgiz».
+  </div>
+</footer>
+
+<script>
+var STEPS = [
+  { x:258, y:296, zones:['z-pits','z-exc','z-trucks','z-roads'],
+    t:'Экскаватор стоит, а самосвалы — в очереди',
+    bad:'Машины закреплены за своим забоем на всю смену. У одного экскаватора очередь из четырёх самосвалов, у соседнего ковш висит в воздухе — везти некому. Диспетчер этого не видит: у него рация и бумажный график.',
+    act:'Каждый рейс назначается заново. Двойник считает ETA по графу дорог, прогноз очереди у забоя, задержку, которую этот рейс создаст другим машинам, отставание от плана и угрозу простоя дробилки — и отправляет машину туда, где она даст больше всего.',
+    res:'Очереди короче почти на треть, добыча выше на 5 %. По оксидной руде — плюс 9 %, по вскрыше — плюс 6 %.',
+    f:[['Средняя очередь','−30 %'],['Добыча','+5,0 %']] },
+
+  { x:470, y:324, zones:['z-crusher','z-trucks','z-roads'],
+    t:'Бункер дробилки пустеет',
+    bad:'Подвоз просел на двадцать минут — взрыв, перекрытая дорога, две машины ушли в ремонт. Бункер дробилки вычерпывается до нуля, и дальше по цепочке встаёт всё.',
+    act:'Уровень бункера и запас на складе дроблёной руды — отдельные признаки двойников, они обновляются каждую минуту. Как только запас падает ниже порога, «угроза простоя фабрики» перевешивает все остальные слагаемые, и ближайшие машины разворачиваются на руду.',
+    res:'Фабрика в реальной смене не простаивает без руды вообще. В теневом расчёте без системы — 4,6 минуты за смену, а если машин всего 15, разрыв становится огромным: 10 минут против 140.',
+    f:[['Простой фабрики','0,0 мин'],['Без системы','4,6 мин']] },
+
+  { x:694, y:318, zones:['z-plant','z-stock','z-conc'],
+    t:'Час простоя фабрики стоит 15 млн ₸',
+    bad:'Фабрика — самое дорогое звено. Пока мельницы крутятся без руды, рудник теряет выручку, а не экономит.',
+    act:'Фабрика защищена двумя рубежами: приёмный бункер дробилки и склад дроблёной руды на полтора часа работы. Двойник держит оба и показывает в «Сводке смены», сколько стоил каждый простой — по тем же данным, что на остальных экранах, поэтому цифры не расходятся.',
+    res:'Простой фабрики в деньгах посчитан честно: 15 млн ₸ за час упущенной выручки. Склад сглаживает перебои и без системы — поэтому мы не завышаем выигрыш и прямо пишем, что он меньше, чем был в версии модели без склада.',
+    f:[['Час простоя','15 млн ₸'],['Буфер склада','~1,5 ч']] },
+
+  { x:580, y:324, zones:['z-stock','z-plant','z-exc'],
+    t:'Качество руды скачет, фабрика теряет извлечение',
+    bad:'Везти выгоднее с богатого забоя — так и делают без системы. Содержание меди на входе фабрики прыгает, флотация не успевает подстроиться, извлечение падает.',
+    act:'У каждого ковша содержание меди снимает XRF-анализатор, весы дают тоннаж, двойник смешивает порции и ведёт виртуальный датчик качества руды в бункере. Выравнивание качества — одно из слагаемых оценки рейса: машину с богатой рудой придержат, если коридор уходит вверх.',
+    res:'Содержание меди на фабрике держится в коридоре 96,7 % времени смены против 90,8 % без системы. Меди в концентрате при этом на полпроцента меньше — и мы это пишем, а не прячем: без системы чаще везут с богатого забоя.',
+    f:[['В коридоре','96,7 %'],['Без системы','90,8 %']] },
+
+  { x:376, y:400, zones:['z-trucks','z-roads','z-garage'],
+    t:'Самосвал ломается в рейсе',
+    bad:'Температура двигателя растёт, вибрация рамы поднимается, давление в шине ползёт вниз. Машина доезжает до забоя и встаёт там гружёная — это аварийный ремонт и 3,5 млн ₸.',
+    act:'Девять приборов на каждой машине пишут в её двойник: ЭБУ по CAN, вибродатчик, TPMS, датчик топлива, GNSS. Двойник считает риск отказа и, пока риск не стал отказом, ведёт машину в ремонтный бокс сама — между рейсами, а не посреди смены.',
+    res:'Аварийных отказов меньше на 73 %. Плановый ремонт стоит 1 млн ₸ вместо 3,5 млн — именно на этой замене держится большая часть эффекта.',
+    f:[['Аварийные отказы','−73 %'],['Ремонт','1 вместо 3,5 млн ₸']] },
+
+  { x:745, y:528, zones:['z-power','z-plant','z-sx','z-leach'],
+    t:'Отключение энергии',
+    bad:'Подстанция теряет питание. Это не абстрактный сбой: встают мельницы, обнуляется ток электролиза, посёлок надо переводить на генератор, а руда продолжает приезжать и копиться.',
+    act:'Сценарий «что если» запускается одной кнопкой и действует заданное время, потом снимается сам. Двойник проводит последствие по всей цепочке: нагрузка подстанции, ток выпрямителя, питание фабрики, накопление руды на складе, отметка в журнале смены.',
+    res:'На прогоне нагрузка падает со 119 до 8 МВт, электролиз уходит в ноль, переработка останавливается, накопление руды видно и в 3D, и в Ditto. По окончании срока всё возвращается само.',
+    f:[['Нагрузка','119 → 8 МВт'],['Электролиз','ток 0']] },
+
+  { x:878, y:412, zones:['z-tails','z-weather','z-plant'],
+    t:'Ливень на хвостохранилище',
+    bad:'Запас до гребня дамбы — предел, за которым начинается авария, о которой пишут в новостях. Ливень поднимает пруд, весной то же делает снеготаяние, летом испарение втрое выше и баланс уходит в другую сторону.',
+    act:'Пять приборов на хвостохранилище: плотномер и расходомер пульпопровода, пьезометры в теле дамбы, уровнемер пруда, замерный лоток фильтрации. Двойник ведёт водный баланс и продолжает темп последнего часа до конца смены — в прогнозе видно, хватит ли запаса до гребня.',
+    res:'Ливень попадает в прогноз как риск: строка перестаёт быть зелёной ещё до того, как уровень станет опасным. Это проверено тестом, а не заявлено на словах.',
+    f:[['Приборов','5'],['Прогноз','до конца смены']] },
+
+  { x:300, y:540, zones:['z-garage','z-kpp','z-trucks','z-plant'],
+    t:'Кончилось топливо, нет шин, закрыт КПП',
+    bad:'Рудник останавливают не только поломки. Автоцистерна не пришла — склад ГСМ пустеет, и машины стоят у колонки. Нет шин на складе РМЦ — ремонт ждёт поставку. Закрыт КПП — реагенты не доехали, и у фабрики остаётся шесть часов запаса.',
+    act:'Три отдельных сценария снабжения на своих модулях. Склад ГСМ расходует весь парк и, опустев, держит машины у АЗС; ремонт шины ждёт поставку около 90 минут; запас реагентов флотации ниже двух часов заставляет фабрику снизить переработку вдвое. После открытия КПП запас восстанавливается.',
+    res:'Видно не «сломалось», а сколько именно машин ждёт и насколько упала добыча. Сценарии по умолчанию выключены, поэтому основной расчёт эффекта они не искажают — это проверено отдельно.',
+    f:[['Сценариев','3'],['Запас реагентов','6 ч']] },
+
+  { x:392, y:452, zones:['z-weather','z-roads','z-trucks','z-leach'],
+    t:'Непогода меняет всю смену',
+    bad:'Дождь, туман, метель, пыльная буря, мороз. Возка замедляется, сырая руда зависает в бункере, в холод орошение приходится останавливать — раствор замерзает в капельницах. При ветре от 12 м/с взрыв переносят.',
+    act:'Климат не выдуман: температура, ветер, доля дней с осадками и снегом, испарение по ФАО взяты из архива реанализа ERA5 за 2015–2024 годы в точке рудника. Погода разыгрывается отдельным потоком случайных чисел и держится от 30 до 75 минут, меняя скорость возки, дробилку, выщелачивание и водный баланс.',
+    res:'Чем хуже погода, тем больше выигрывает система: в январе эффект около 8,7 млрд ₸ в год, в июле — около 6,8. Это и есть проверка на прочность, а не одна удачная смена.',
+    f:[['Метель','возка 50 %'],['Январь / июль','8,7 / 6,8 млрд ₸']] },
+
+  { x:0, y:0, zones:[],
+    t:'Сколько всё это даёт в деньгах',
+    bad:'Любой рудник спросит одно: а без вашей системы было бы хуже? Обычно на это отвечают презентацией.',
+    act:'Мы считаем ту же смену дважды. Двойник smart — реальная работа карьера с умной диспетчеризацией. Двойник fixed — та же смена с тем же seed, теми же поломками, взрывами и перекрытиями, но машины закреплены за забоями, как у плановика. Диспетчеру fixed не показывается: он для руководства, чтобы ответить на этот вопрос цифрой.',
+    res:'Около 7,2 млрд ₸ в год на сегмент из 20 самосвалов. Умная стратегия добыла не меньше фиксированной во всех 20 сменах. Себестоимость тонны меди C1 — 1,12 доллара за фунт против 1,16, на 3 % дешевле, в основном за счёт плановых ремонтов вместо аварийных.',
+    f:[['Эффект','≈ 7,2 млрд ₸/год'],['C1','$1,12 против $1,16'],['Смен','20 из 20']] }
+];
+
+var scene = document.getElementById('scene');
+var pinsG = document.getElementById('pins');
+var rail  = document.getElementById('rail');
+var SVGNS = 'http://www.w3.org/2000/svg';
+var i = -1, timer = null;
+
+function pad(n){ return n < 10 ? '0' + n : String(n); }
+
+STEPS.forEach(function (s, n) {
+  if (n < STEPS.length - 1) {
+    var g = document.createElementNS(SVGNS, 'g');
+    g.setAttribute('class', 'pin');
+    g.setAttribute('transform', 'translate(' + s.x + ',' + s.y + ')');
+    g.setAttribute('role', 'button');
+    g.setAttribute('tabindex', '0');
+    g.setAttribute('aria-label', 'Точка ' + (n + 1) + ': ' + s.t);
+    g.innerHTML = '<circle class="halo" r="13"/><circle class="dot" r="13"/><text>' + (n + 1) + '</text>';
+    g.addEventListener('click', function () { stop(); show(n); });
+    g.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); stop(); show(n); }
+    });
+    pinsG.appendChild(g);
+    s.el = g;
+  }
+  var b = document.createElement('button');
+  b.innerHTML = '<span class="n">' + pad(n + 1) + '</span>' + s.t;
+  b.addEventListener('click', function () { stop(); show(n); });
+  rail.appendChild(b);
+  s.btn = b;
+});
+
+var eyebrow = document.getElementById('eyebrow'), ttl = document.getElementById('ttl');
+var badEl = document.getElementById('bad'), actEl = document.getElementById('act'), resEl = document.getElementById('res');
+var factsEl = document.getElementById('facts'), cnt = document.getElementById('cnt');
+var cap1 = document.getElementById('cap1'), cap2 = document.getElementById('cap2'), cap3 = document.getElementById('cap3');
+var prev = document.getElementById('prev'), next = document.getElementById('next');
+
+function show(k) {
+  i = Math.max(0, Math.min(STEPS.length - 1, k));
+  var s = STEPS[i];
+  eyebrow.textContent = i === STEPS.length - 1 ? 'Итог' : 'Точка ' + pad(i + 1);
+  ttl.textContent = s.t;
+  badEl.textContent = s.bad;
+  actEl.textContent = s.act;
+  resEl.textContent = s.res;
+  factsEl.innerHTML = s.f.map(function (f) {
+    return '<span class="fact">' + f[0] + '<b>' + f[1] + '</b></span>';
+  }).join('');
+  cap1.textContent = 'Что идёт не так'; cap2.textContent = 'Что делает двойник'; cap3.textContent = 'Что это даёт';
+  if (window.AKT3D) window.AKT3D.focus(i);
+  cnt.textContent = pad(i + 1) + ' / ' + pad(STEPS.length);
+  prev.disabled = i === 0;
+  next.disabled = i === STEPS.length - 1;
+
+  var zones = document.querySelectorAll('.zone');
+  if (s.zones.length) {
+    scene.classList.add('focus');
+    zones.forEach(function (z) { z.classList.toggle('on', s.zones.indexOf(z.id) > -1); });
+  } else {
+    scene.classList.remove('focus');
+    zones.forEach(function (z) { z.classList.remove('on'); });
+  }
+  STEPS.forEach(function (o, n) {
+    if (o.el) o.el.setAttribute('aria-current', String(n === i));
+    o.btn.setAttribute('aria-current', String(n === i));
+  });
+}
+
+function reset() {
+  stop();
+  i = -1;
+  scene.classList.remove('focus');
+  document.querySelectorAll('.zone').forEach(function (z) { z.classList.remove('on'); });
+  STEPS.forEach(function (o) {
+    if (o.el) o.el.setAttribute('aria-current', 'false');
+    o.btn.setAttribute('aria-current', 'false');
+  });
+  eyebrow.textContent = 'Схема целиком';
+  cap1.textContent = 'Что на схеме'; cap2.textContent = 'Что за этим стоит'; cap3.textContent = 'С чего начать';
+  if (window.AKT3D) window.AKT3D.reset();
+  ttl.textContent = 'Одна смена на настоящей геометрии';
+  badEl.textContent = 'Руда идёт из трёх выработок: сульфидная на дробилку и фабрику, оксидная на кучное выщелачивание и завод SX-EW, вскрыша на три отвала.';
+  actEl.textContent = 'За всем этим стоят 158 двойников в Eclipse Ditto и 93 описания приборов на 24 вида объектов — у каждого объекта записано, чем снимаются его показания и зачем.';
+  resEl.textContent = 'Нажмите любую точку на схеме или включите показ по порядку.';
+  factsEl.innerHTML = '<span class="fact">Двойников<b>158</b></span><span class="fact">Приборов<b>93</b></span><span class="fact">Самосвалов<b>20</b></span>';
+  cnt.textContent = '— / ' + pad(STEPS.length);
+  prev.disabled = true;
+  next.disabled = false;
+}
+
+var playBtn = document.getElementById('play');
+function stop() {
+  if (timer) { clearInterval(timer); timer = null; }
+  playBtn.textContent = '▶ Показать по порядку';
+}
+playBtn.addEventListener('click', function () {
+  if (timer) { stop(); return; }
+  show(0);
+  playBtn.textContent = '❙❙ Пауза';
+  timer = setInterval(function () {
+    if (i >= STEPS.length - 1) { stop(); return; }
+    show(i + 1);
+  }, 13000);
+});
+document.getElementById('reset').addEventListener('click', reset);
+prev.addEventListener('click', function () { stop(); show(i - 1); });
+next.addEventListener('click', function () { stop(); show(i < 0 ? 0 : i + 1); });
+
+document.addEventListener('keydown', function (e) {
+  var t = e.target.tagName;
+  if (t === 'INPUT' || t === 'TEXTAREA') return;
+  if (e.key === 'ArrowRight') { stop(); show(i < 0 ? 0 : i + 1); }
+  if (e.key === 'ArrowLeft' && i > 0) { stop(); show(i - 1); }
+});
+
+try {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches && scene.pauseAnimations) {
+    scene.pauseAnimations();
+    document.getElementById('hint').textContent = 'Движение отключено по настройкам системы';
+  }
+} catch (err) {}
+
+var mapbox = document.getElementById('mapbox'), t3d = document.getElementById('t3d'), t2d = document.getElementById('t2d');
+function mode(three) {
+  mapbox.classList.toggle('svgmode', !three);
+  t3d.setAttribute('aria-pressed', String(three));
+  t2d.setAttribute('aria-pressed', String(!three));
+  if (three && window.AKT3D) { window.AKT3D.resize(); if (i >= 0) window.AKT3D.focus(i); else window.AKT3D.reset(); }
+}
+t3d.addEventListener('click', function () { mode(true); });
+t2d.addEventListener('click', function () { mode(false); });
+setTimeout(function () {
+  if (!window.AKT3D) { document.body.classList.add('no3d'); mapbox.classList.add('svgmode'); }
+}, 8000);
+
+reset();
+</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js"}}</script>
+<script type="module" src="scene3d.js"></script>
+</body>
+</html>

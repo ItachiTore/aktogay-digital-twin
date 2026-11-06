@@ -1,0 +1,422 @@
+<title>Цифровой двойник карьера Актогай</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  /* Layout: диспетчерский пульт — узкая колонка чтения, широкие рейки с числами, секции ступенями как уступы карьера */
+  :root {
+    --bg: #0c0f12;
+    --surface: #14181d;
+    --surface-2: #1b2027;
+    --line: #2a313a;
+    --ink: #e8eaed;
+    --ink-2: #a9b0ba;
+    --ink-3: #727a85;
+    --amber: #f5a524;
+    --smart: #d95926;
+    --fixed: #3987e5;
+    --good: #35c07a;
+    --display: 'IBM Plex Sans Condensed', 'Arial Narrow', system-ui, sans-serif;
+    --body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', monospace;
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 68rem;
+    margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+
+  h1, h2, h3 { font-family: var(--display); font-weight: 700; line-height: 1.05; margin: 0; text-wrap: balance; }
+  p { margin: 0; }
+  a { color: inherit; }
+
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: .72rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  /* ── шапка ── */
+  .topbar {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: 20;
+    background: rgba(12, 15, 18, .88);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0 0 auto;
+    height: env(safe-area-inset-top, 0px);
+    z-index: 30;
+    background: var(--bg);
+  }
+  .topbar .wrap {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-block: .7rem;
+  }
+  .mark { font-family: var(--display); font-weight: 700; font-size: 1rem; letter-spacing: .01em; }
+  .mark span { color: var(--amber); }
+  .langs { margin-left: auto; display: flex; gap: .25rem; }
+  .langs button {
+    font-family: var(--mono);
+    font-size: .72rem;
+    letter-spacing: .08em;
+    color: var(--ink-3);
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    padding: .25rem .6rem;
+    cursor: pointer;
+  }
+  .langs button[aria-pressed="true"] { color: var(--ink); border-color: var(--line); background: var(--surface-2); }
+  .langs button:hover { color: var(--ink); }
+
+  /* ── герой ── */
+  .hero { padding-block: clamp(2.5rem, 7vw, 4.5rem) clamp(2rem, 5vw, 3rem); }
+  .hero .rule {
+    width: 3px;
+    background: linear-gradient(180deg, var(--amber), var(--smart));
+    border-radius: 2px;
+  }
+  .hero-grid { display: flex; gap: clamp(1rem, 3vw, 1.75rem); }
+  .hero h1 {
+    font-size: clamp(2.6rem, 9vw, 5.25rem);
+    letter-spacing: -.02em;
+    text-transform: uppercase;
+  }
+  .hero h1 em { font-style: normal; color: var(--amber); display: block; }
+  .hero .lede {
+    margin-top: 1.1rem;
+    max-width: 44ch;
+    color: var(--ink-2);
+    font-size: clamp(1rem, 2.2vw, 1.12rem);
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: 1.4rem; }
+  .chip {
+    font-family: var(--mono);
+    font-size: .75rem;
+    color: var(--ink-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: .28rem .7rem;
+    background: var(--surface);
+  }
+  .cta { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.8rem; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    font-weight: 600;
+    font-size: .95rem;
+    text-decoration: none;
+    border-radius: 10px;
+    padding: .7rem 1.1rem;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    transition: border-color .15s, background .15s;
+  }
+  .btn:hover { border-color: var(--ink-3); background: var(--surface-2); }
+  .btn.primary { background: var(--amber); color: #15120a; border-color: var(--amber); }
+  .btn.primary:hover { filter: brightness(1.08); background: var(--amber); }
+
+  /* ── рейка чисел ── */
+  .rail { border-block: 1px solid var(--line); background: var(--surface); }
+  .rail .wrap { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; padding-block: 0; }
+  .stat { padding: 1.25rem .25rem; }
+  .stat b {
+    display: block;
+    font-family: var(--display);
+    font-size: clamp(1.5rem, 4.5vw, 2.1rem);
+    font-weight: 700;
+    letter-spacing: -.01em;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat span { display: block; margin-top: .2rem; font-size: .8rem; color: var(--ink-3); line-height: 1.35; }
+
+  /* ── секции ── */
+  section { padding-block: clamp(2.5rem, 6vw, 4rem); }
+  .sec-head { display: flex; align-items: baseline; gap: .9rem; margin-bottom: 1.6rem; flex-wrap: wrap; }
+  .sec-head h2 { font-size: clamp(1.5rem, 4vw, 2.1rem); letter-spacing: -.01em; }
+  .prose { max-width: 62ch; color: var(--ink-2); }
+  .prose + .prose { margin-top: .9rem; }
+
+  .cols { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+  .card {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    padding: 1.2rem 1.25rem;
+    min-width: 0;
+  }
+  .card h3 { font-size: 1.05rem; letter-spacing: .01em; }
+  .card .tag {
+    font-family: var(--mono);
+    font-size: .7rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: .45rem;
+  }
+  .card p { margin-top: .5rem; color: var(--ink-2); font-size: .94rem; }
+  .card.smart { border-left: 3px solid var(--smart); }
+  .card.smart .tag { color: var(--smart); }
+  .card.fixed { border-left: 3px solid var(--fixed); }
+  .card.fixed .tag { color: var(--fixed); }
+
+  .facts { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
+  .fact { border-top: 2px solid var(--line); padding-top: .85rem; min-width: 0; }
+  .fact b { font-family: var(--display); font-size: 1.9rem; font-weight: 700; display: block; font-variant-numeric: tabular-nums; }
+  .fact b small { font-size: .9rem; font-weight: 600; color: var(--ink-3); margin-left: .2rem; }
+  .fact p { color: var(--ink-2); font-size: .92rem; margin-top: .3rem; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+  th, td { padding: .72rem .9rem; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  thead th {
+    font-family: var(--mono);
+    font-size: .68rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    font-weight: 400;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td:first-child { white-space: normal; color: var(--ink-2); min-width: 12rem; }
+  td.n { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+  td.d { font-family: var(--mono); text-align: right; color: var(--good); font-weight: 600; }
+
+  pre {
+    margin: 0;
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    padding: 1.1rem 1.2rem;
+    font-family: var(--mono);
+    font-size: .88rem;
+    line-height: 1.75;
+    color: var(--ink);
+  }
+  pre .c { color: var(--ink-3); }
+  pre .k { color: var(--amber); }
+
+  footer { border-top: 1px solid var(--line); padding-block: 2rem 2.5rem; }
+  .foot { display: flex; flex-wrap: wrap; gap: 1.5rem 2.5rem; align-items: flex-start; }
+  .foot div { min-width: 0; }
+  .foot .eyebrow { display: block; margin-bottom: .35rem; }
+  .foot a { font-family: var(--mono); font-size: .88rem; color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line); }
+  .foot a:hover { border-color: var(--amber); }
+  .note { color: var(--ink-3); font-size: .82rem; max-width: 60ch; margin-top: 1.75rem; line-height: 1.55; }
+
+  :focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; border-radius: 4px; }
+
+  @media (max-width: 640px) {
+    .rail .wrap { grid-template-columns: repeat(2, 1fr); }
+    .hero .rule { width: 2px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="mark">Актогай<span>.</span>twin</div>
+    <div class="langs" role="group" aria-label="Язык / Language">
+      <button type="button" data-lang="ru" aria-pressed="true">РУ</button>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <div class="hero-grid">
+      <div class="rule" aria-hidden="true"></div>
+      <div>
+        <p class="eyebrow" data-ru="Цифровой рудник на OpenEgiz · команда 037" data-en="Digital Mine on OpenEgiz · team 037">Цифровой рудник на OpenEgiz · команда 037</p>
+        <h1><span data-ru="Цифровой двойник" data-en="Digital twin of the">Цифровой двойник</span><em data-ru="карьера Актогай" data-en="Aktogay open pit">карьера Актогай</em></h1>
+        <p class="lede" data-ru="Медный карьер и весь горно-обогатительный комбинат в реальном времени: умная диспетчеризация самосвалов, прогноз отказов по датчикам, сценарии «что если» и экономический эффект в тенге." data-en="A copper open pit and the whole processing complex in real time: smart truck dispatch, sensor-based failure prediction, what-if scenarios and the economic effect in tenge.">Медный карьер и весь горно-обогатительный комбинат в реальном времени: умная диспетчеризация самосвалов, прогноз отказов по датчикам, сценарии «что если» и экономический эффект в тенге.</p>
+        <div class="chips">
+          <span class="chip" data-ru="Eclipse Ditto · MQTT · InfluxDB · Grafana" data-en="Eclipse Ditto · MQTT · InfluxDB · Grafana">Eclipse Ditto · MQTT · InfluxDB · Grafana</span>
+          <span class="chip" data-ru="React + Three.js" data-en="React + Three.js">React + Three.js</span>
+          <span class="chip" data-ru="РУ · ҚАЗ · EN" data-en="RU · KK · EN">РУ · ҚАЗ · EN</span>
+          <span class="chip">MIT</span>
+        </div>
+        <div class="cta">
+          <a class="btn primary" href="https://github.com/openegiz-contest/team-037" data-ru="Исходный код на GitHub" data-en="Source code on GitHub">Исходный код на GitHub</a>
+          <a class="btn" href="https://github.com/openegiz-contest/team-037/blob/main/SUBMISSION.md" data-ru="Описание решения" data-en="Solution write-up">Описание решения</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rail">
+    <div class="wrap">
+      <div class="stat"><b class="num">158</b><span data-ru="двойников в Eclipse Ditto" data-en="twins in Eclipse Ditto">двойников в Eclipse Ditto</span></div>
+      <div class="stat"><b class="num">7,2<small data-ru="млрд ₸/год" data-en="bn ₸/yr"> млрд ₸/год</small></b><span data-ru="эффект на сегмент парка" data-en="effect on the modelled fleet">эффект на сегмент парка</span></div>
+      <div class="stat"><b class="num">20/20</b><span data-ru="смен система не хуже" data-en="shifts the system never lost">смен система не хуже</span></div>
+      <div class="stat"><b class="num">1</b><span data-ru="команда для запуска" data-en="command to run it">команда для запуска</span></div>
+    </div>
+  </div>
+
+  <section class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">01</p>
+      <h2 data-ru="Где карьер теряет деньги" data-en="Where the pit loses money">Где карьер теряет деньги</h2>
+    </div>
+    <p class="prose" data-ru="Самосвалы закрепляют за экскаваторами на всю смену. План хорош для спокойного дня, но на поломку, закрытый съезд или взрыв никто не реагирует вовремя." data-en="Trucks are assigned to excavators for the whole shift. The plan works on a calm day, but nobody reacts in time to a breakdown, a closed ramp or a blast.">Самосвалы закрепляют за экскаваторами на всю смену. План хорош для спокойного дня, но на поломку, закрытый съезд или взрыв никто не реагирует вовремя.</p>
+    <div class="facts" style="margin-top:1.75rem">
+      <div class="fact">
+        <b class="num">142<small data-ru="мин" data-en="min"> мин</small></b>
+        <p data-ru="простоя фабрики за смену при нехватке самосвалов. Час простоя — около 15 млн ₸." data-en="of plant downtime per shift when trucks are short. An hour of it costs about 15 m ₸.">простоя фабрики за смену при нехватке самосвалов. Час простоя — около 15 млн ₸.</p>
+      </div>
+      <div class="fact">
+        <b class="num">2,4<small data-ru="мин" data-en="min"> мин</small></b>
+        <p data-ru="средняя очередь самосвала у экскаватора, пока соседние забои недогружены." data-en="average truck queue at the excavator while neighbouring faces run under capacity.">средняя очередь самосвала у экскаватора, пока соседние забои недогружены.</p>
+      </div>
+      <div class="fact">
+        <b class="num">4,4<small data-ru="шт" data-en="pcs"> шт</small></b>
+        <p data-ru="аварийных отказов самосвалов за смену — без предупреждения, с эвакуацией и долгим ремонтом." data-en="unplanned truck failures per shift — no warning, towing, and a long repair.">аварийных отказов самосвалов за смену — без предупреждения, с эвакуацией и долгим ремонтом.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">02</p>
+      <h2 data-ru="Две модели вместо одной" data-en="Two models instead of one">Две модели вместо одной</h2>
+    </div>
+    <p class="prose" data-ru="Карьер считается дважды на одних и тех же событиях: с системой и без неё. Поэтому эффект виден прямо сейчас, а не в отчёте через месяц." data-en="The pit is simulated twice on the same events: with the system and without it. So the effect is visible right now, not in a report a month later.">Карьер считается дважды на одних и тех же событиях: с системой и без неё. Поэтому эффект виден прямо сейчас, а не в отчёте через месяц.</p>
+    <div class="cols" style="margin-top:1.5rem">
+      <div class="card smart">
+        <span class="tag num">org.aktogay.smart</span>
+        <h3 data-ru="Реальный карьер — для диспетчера" data-en="The live pit — for the dispatcher">Реальный карьер — для диспетчера</h3>
+        <p data-ru="Положение, груз, топливо и датчики каждой машины, состояние экскаваторов, бункер дробилки, питание фабрики — каждую секунду. Каждый рейс назначается заново по времени в пути, очередям, угрозе простоя фабрики и качеству руды." data-en="Position, payload, fuel and sensors of every machine, excavator states, crusher bin, plant power — every second. Each trip is reassigned from scratch using travel time, queues, the risk of starving the plant and ore grade.">Положение, груз, топливо и датчики каждой машины, состояние экскаваторов, бункер дробилки, питание фабрики — каждую секунду. Каждый рейс назначается заново по времени в пути, очередям, угрозе простоя фабрики и качеству руды.</p>
+      </div>
+      <div class="card fixed">
+        <span class="tag num">org.aktogay.fixed</span>
+        <h3 data-ru="Теневой расчёт — для руководства" data-en="The shadow run — for management">Теневой расчёт — для руководства</h3>
+        <p data-ru="Та же смена, те же поломки, перекрытия и взрывы, но по-старому: самосвалы закреплены за экскаваторами. Диспетчеру не показывается. Отвечает на вопрос «сколько даёт система» в тоннах, минутах простоя и тенге." data-en="The same shift, the same breakdowns, closures and blasts, but the old way: trucks fixed to excavators. Hidden from the dispatcher. It answers the question “what does the system give” in tonnes, idle minutes and tenge.">Та же смена, те же поломки, перекрытия и взрывы, но по-старому: самосвалы закреплены за экскаваторами. Диспетчеру не показывается. Отвечает на вопрос «сколько даёт система» в тоннах, минутах простоя и тенге.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">03</p>
+      <h2 data-ru="Результат за 20 смен" data-en="Result over 20 shifts">Результат за 20 смен</h2>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-ru="Показатель за смену" data-en="Per shift">Показатель за смену</th>
+            <th class="n" style="text-align:right" data-ru="Без системы" data-en="Without">Без системы</th>
+            <th class="n" style="text-align:right" data-ru="С системой" data-en="With">С системой</th>
+            <th class="n" style="text-align:right">Δ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td data-ru="Простой фабрики без руды, мин" data-en="Plant idle without ore, min">Простой фабрики без руды, мин</td><td class="n">4,6</td><td class="n">0,0</td><td class="d">−100%</td></tr>
+          <tr><td data-ru="Аварийные отказы самосвалов" data-en="Unplanned truck failures">Аварийные отказы самосвалов</td><td class="n">4,4</td><td class="n">1,1</td><td class="d">−74%</td></tr>
+          <tr><td data-ru="Средняя очередь, мин" data-en="Average queue, min">Средняя очередь, мин</td><td class="n">2,4</td><td class="n">1,7</td><td class="d">−30%</td></tr>
+          <tr><td data-ru="Руда в коридоре качества, % времени" data-en="Ore within the grade band, % of time">Руда в коридоре качества, % времени</td><td class="n">90,8</td><td class="n">96,7</td><td class="d">+5,9 п.п.</td></tr>
+          <tr><td data-ru="Добыто всего, т" data-en="Total mined, t">Добыто всего, т</td><td class="n">100 104</td><td class="n">105 124</td><td class="d">+5,0%</td></tr>
+          <tr><td data-ru="Себестоимость меди C1, $/фунт" data-en="Copper C1 cost, $/lb">Себестоимость меди C1, $/фунт</td><td class="n">1,16</td><td class="n">1,12</td><td class="d">−3,0%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note" data-ru="Seed 1–20, 20 самосвалов, 12-часовые смены, реальная геометрия Актогая и климат октября. Система добыла не меньше во всех 20 сменах. Дополнительная добыча в деньги не переводится — оценка консервативная." data-en="Seeds 1–20, 20 trucks, 12-hour shifts, real Aktogay geometry and October climate. The system mined no less in all 20 shifts. Extra output is not converted into money, so the estimate is conservative.">Seed 1–20, 20 самосвалов, 12-часовые смены, реальная геометрия Актогая и климат октября. Система добыла не меньше во всех 20 сменах. Дополнительная добыча в деньги не переводится — оценка консервативная.</p>
+  </section>
+
+  <section class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">04</p>
+      <h2 data-ru="Запуск" data-en="Running it">Запуск</h2>
+    </div>
+    <p class="prose" data-ru="Чистая Ubuntu 24.04 с Docker. Команда поднимает платформу OpenEgiz, собирает образы, создаёт двойники и запускает смену. Внешних датасетов нет." data-en="A clean Ubuntu 24.04 with Docker. The command brings up the OpenEgiz platform, builds the images, creates the twins and starts a shift. No external datasets.">Чистая Ubuntu 24.04 с Docker. Команда поднимает платформу OpenEgiz, собирает образы, создаёт двойники и запускает смену. Внешних датасетов нет.</p>
+    <pre style="margin-top:1.25rem"><span class="c"># <span data-ru="платформа + карьер + симулятор + 3D-интерфейс" data-en="platform + pit + simulator + 3D interface">платформа + карьер + симулятор + 3D-интерфейс</span></span>
+<span class="k">make</span> aktogay
+
+<span class="c"># <span data-ru="интерфейс" data-en="interface">интерфейс</span></span>
+http://localhost:8095
+<span class="c"># Grafana</span>
+http://localhost:3000</pre>
+  </section>
+
+  <section class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow">05</p>
+      <h2 data-ru="Честно о границах" data-en="Honest about the limits">Честно о границах</h2>
+    </div>
+    <p class="prose" data-ru="Геометрия карьера, дороги и контур хвостохранилища — реальные: со снимка и из OpenStreetMap. Климат реальный, нормы ERA5 за 2015–2024 годы. Операционная телеметрия смоделирована: открытых данных по Актогаю нет." data-en="The pit geometry, the roads and the tailings outline are real: from satellite imagery and OpenStreetMap. The climate is real, ERA5 normals for 2015–2024. Operational telemetry is simulated: no open data for Aktogay exists.">Геометрия карьера, дороги и контур хвостохранилища — реальные: со снимка и из OpenStreetMap. Климат реальный, нормы ERA5 за 2015–2024 годы. Операционная телеметрия смоделирована: открытых данных по Актогаю нет.</p>
+    <p class="prose" data-ru="Ставки в экономике — оценки, и они лежат в одном файле: их можно заменить фактическими за пять минут. Модель принимает данные через MQTT и Ditto, поэтому замена симулятора на реальный поток — это смена источника, а не переписывание системы." data-en="The economic rates are estimates kept in a single file: real figures replace them in five minutes. The model takes data through MQTT and Ditto, so swapping the simulator for a real feed changes the source, not the system.">Ставки в экономике — оценки, и они лежат в одном файле: их можно заменить фактическими за пять минут. Модель принимает данные через MQTT и Ditto, поэтому замена симулятора на реальный поток — это смена источника, а не переписывание системы.</p>
+  </section>
+</main>
+
+<footer class="wrap">
+  <div class="foot">
+    <div>
+      <span class="eyebrow" data-ru="Репозиторий" data-en="Repository">Репозиторий</span>
+      <a href="https://github.com/openegiz-contest/team-037">github.com/openegiz-contest/team-037</a>
+    </div>
+    <div>
+      <span class="eyebrow" data-ru="Конкурс" data-en="Contest">Конкурс</span>
+      <a href="https://github.com/openegiz-contest/qualifying-results">Цифровой рудник на OpenEgiz</a>
+    </div>
+    <div>
+      <span class="eyebrow" data-ru="Лицензия" data-en="Licence">Лицензия</span>
+      <span class="num" style="font-size:.88rem">MIT</span>
+    </div>
+  </div>
+  <p class="note" data-ru="Модель построена по открытым данным, операционные данные смоделированы. Проект не связан с KAZ Minerals." data-en="The model is built from open data; operational data is simulated. The project is not affiliated with KAZ Minerals.">Модель построена по открытым данным, операционные данные смоделированы. Проект не связан с KAZ Minerals.</p>
+</footer>
+
+<script>
+  (function () {
+    var nodes = document.querySelectorAll('[data-ru][data-en]');
+    var buttons = document.querySelectorAll('.langs button');
+
+    function apply(lang) {
+      nodes.forEach(function (el) {
+        var text = el.getAttribute('data-' + lang);
+        if (text) el.textContent = text;
+      });
+      buttons.forEach(function (b) {
+        b.setAttribute('aria-pressed', String(b.dataset.lang === lang));
+      });
+      document.documentElement.lang = lang;
+      try { localStorage.setItem('aktogay-lang', lang); } catch (e) { /* приватное окно */ }
+    }
+
+    buttons.forEach(function (b) {
+      b.addEventListener('click', function () { apply(b.dataset.lang); });
+    });
+
+    var saved = null;
+    try { saved = localStorage.getItem('aktogay-lang'); } catch (e) { /* приватное окно */ }
+    if (saved === 'en') apply('en');
+  })();
+</script>
