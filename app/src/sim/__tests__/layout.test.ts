@@ -109,3 +109,45 @@ describe('планировка промплощадки: здания не на�
     expect(distToRoads(gsm, obstacles), 'ГСМ').toBeGreaterThan(2);
   });
 });
+
+/**
+ * Провода и ленты не должны проходить сквозь штабели. На отборочном этапе ЛЭП шла
+ * ровно через конус склада дроблёной руды, и это было видно на экскурсии.
+ */
+describe('ЛЭП и конвейеры обходят конусы складов', () => {
+  const cfg = new Simulation({ seed: 1, truckCount: 20, strategy: 'smart' }).cfg;
+  /** Радиусы конусов: те же, что в сцене (STOCKPILE_MAX_R и радиус второго штабеля). */
+  const piles = [
+    { name: 'склад дроблёной руды', p: cfg.sites.stockpile, r: 140 },
+    { name: 'склад ОФ-2', p: cfg.sites.stockpile2, r: 88 },
+  ];
+
+  /** Расстояние от точки до отрезка. */
+  const distToSeg = (px: number, py: number, ax: number, ay: number, bx: number, by: number): number => {
+    const dx = bx - ax;
+    const dy = by - ay;
+    const len2 = dx * dx + dy * dy;
+    const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2));
+    return Math.hypot(px - (ax + dx * t), py - (ay + dy * t));
+  };
+
+  for (const pile of piles) {
+    it(`ЛЭП не проходит сквозь ${pile.name}`, () => {
+      for (const line of cfg.sites.powerLines) {
+        for (let i = 0; i + 1 < line.length; i++) {
+          const d = distToSeg(pile.p.x, pile.p.y, line[i][0], line[i][1], line[i + 1][0], line[i + 1][1]);
+          expect(d, `пролёт ${line[i]} → ${line[i + 1]} проходит в ${Math.round(d)} м от центра`).toBeGreaterThan(pile.r + 40);
+        }
+      }
+    });
+  }
+
+  it('изломы трасс конвейеров на фабрики не лежат внутри штабелей', () => {
+    // Первая точка излома может оказаться под конусом — сцена её пропускает, но
+    // хотя бы одна точка трассы обязана остаться снаружи, иначе ленту некуда вывести.
+    const outside = (via: readonly { x: number; y: number }[], c: { x: number; y: number }, r: number) =>
+      via.filter((v) => Math.hypot(v.x - c.x, v.y - c.y) > r + 8).length;
+    expect(outside(cfg.sites.plantVia, cfg.sites.stockpile, 140)).toBeGreaterThan(0);
+    expect(outside(cfg.sites.plant2Via, cfg.sites.stockpile2, 88)).toBeGreaterThan(0);
+  });
+});

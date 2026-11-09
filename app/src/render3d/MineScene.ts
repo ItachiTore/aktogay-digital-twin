@@ -410,7 +410,7 @@ export class MineScene {
     this.buildings.push(crusher2.root);
     const pile2R = 88;
     const pile2G = this.heightAt(S2.stockpile2.x, S2.stockpile2.y);
-    const pile2 = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 18, 1), new THREE.MeshStandardMaterial({ color: '#8b6b47', roughness: 1, flatShading: true }));
+    const pile2 = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 44, 1), new THREE.MeshStandardMaterial({ color: '#8b6b47', roughness: 1, flatShading: true }));
     pile2.scale.set(pile2R, pile2R * 0.82, pile2R);
     pile2.position.set(S2.stockpile2.x, pile2G + pile2R * 0.41, S2.stockpile2.y);
     pile2.castShadow = true;
@@ -617,7 +617,13 @@ export class MineScene {
       this.stockpileAt = new THREE.Vector3(sx, ground, sz);
       this.conveyorFrom.set(cx, this.crusherPos.y + 95, cz);
       this.stackHead.set(sx, ground + STOCKPILE_MAX_R * 0.62 + 18, sz);
-      this.reclaimFrom.set(sx, ground + 3, sz);
+      // Руда забирается из тоннеля ПОД штабелем, поэтому лента должна выходить у подошвы
+      // конуса, а не из его середины. Берём максимальный радиус: конус то растёт, то тает,
+      // и при любом его размере лента остаётся снаружи.
+      const outV = cfg.sites.plantVia[0] ?? cfg.sites.plant;
+      const outLen = Math.hypot(outV.x - sx, outV.y - sz) || 1;
+      const TOE = STOCKPILE_MAX_R + 8;
+      this.reclaimFrom.set(sx + ((outV.x - sx) / outLen) * TOE, ground + 3, sz + ((outV.y - sz) / outLen) * TOE);
       this.conveyorTo.set(pp.x, plant.position.y + 80, pp.y);
       // Конвейеры идут по изломам реальной трассы; высота над землёй плавно меняется между концами.
       const galleryAt = (from: THREE.Vector3, to: THREE.Vector3, pts: readonly { x: number; y: number }[]) =>
@@ -627,7 +633,9 @@ export class MineScene {
           return new THREE.Vector3(p.x, this.heightAt(p.x, p.y) + over, p.y);
         });
       this.stackerPath = [this.conveyorFrom, ...galleryAt(this.conveyorFrom, this.stackHead, cfg.sites.conveyorVia), this.stackHead];
-      this.reclaimPath = [this.reclaimFrom, ...galleryAt(this.reclaimFrom, this.conveyorTo, cfg.sites.plantVia), this.conveyorTo];
+      // Изломы трассы, оказавшиеся внутри штабеля, пропускаем — иначе лента нырнёт обратно в конус.
+      const viaOut = cfg.sites.plantVia.filter((p) => Math.hypot(p.x - sx, p.y - sz) > TOE);
+      this.reclaimPath = [this.reclaimFrom, ...galleryAt(this.reclaimFrom, this.conveyorTo, viaOut), this.conveyorTo];
       const keepOut = { x: sx, z: sz, r: STOCKPILE_MAX_R + 10 };
       for (let i = 0; i + 1 < this.stackerPath.length; i++)
         beltBetween(this.stackerPath[i], this.stackerPath[i + 1], i + 2 === this.stackerPath.length ? this.stackerMat : this.conveyorMat, keepOut);
@@ -664,11 +672,18 @@ export class MineScene {
       };
       const keep2 = { x: S2.stockpile2.x, z: S2.stockpile2.y, r: 100 };
       beltAlong([S2.crusher2, S2.stockpile2], this.chain2.crusherTop.y, this.chain2.pileTop.y, keep2);
-      beltAlong([S2.stockpile2, ...S2.plant2Via, S2.plant2], this.chain2.pileGround + 3, this.chain2.plantIn.y, keep2);
+      const toe2 = (() => {
+        const v = S2.plant2Via[0] ?? S2.plant2;
+        const L = Math.hypot(v.x - S2.stockpile2.x, v.y - S2.stockpile2.y) || 1;
+        const d = pile2R + 8;
+        return { x: S2.stockpile2.x + ((v.x - S2.stockpile2.x) / L) * d, y: S2.stockpile2.y + ((v.y - S2.stockpile2.y) / L) * d };
+      })();
+      const via2Out = S2.plant2Via.filter((p) => Math.hypot(p.x - S2.stockpile2.x, p.y - S2.stockpile2.y) > pile2R + 8);
+      beltAlong([toe2, ...via2Out, S2.plant2], this.chain2.pileGround + 3, this.chain2.plantIn.y, keep2);
       avoid.push({ x: sx, y: sz, r: STOCKPILE_MAX_R + 60 });
 
       const mat = new THREE.MeshStandardMaterial({ color: '#8b6b47', roughness: 1, flatShading: true });
-      this.stockpileCone = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 18, 1), mat);
+      this.stockpileCone = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 44, 1), mat);
       this.stockpileCone.castShadow = true;
       this.stockpileCone.receiveShadow = true;
       this.scene.add(this.stockpileCone);
