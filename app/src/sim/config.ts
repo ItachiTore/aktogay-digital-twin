@@ -675,3 +675,21 @@ export function makeConfig(overrides: Partial<SimConfig> = {}): SimConfig {
   const base: SimConfig = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
   return { ...base, ...overrides };
 }
+
+/**
+ * Опубликованные показатели настоящего Актогая, с которыми сверяется модель.
+ * Только то, что есть в открытых источниках дословно; оценок здесь нет.
+ * Сверка — `npm run calibrate`, результат — CALIBRATION.md.
+ */
+export const PUBLISHED = {
+  /** Проектная мощность одной сульфидной линии, млн т руды в год. */
+  sulfideLineMtYear: 25,
+  /** Две линии после расширения, млн т руды в год. */
+  sulfideTotalMtYear: 50,
+  /** Медь из сульфидной руды по руднику, тыс. т в год (план 2022–2027). */
+  sulfideCopperKtYear: 170,
+  /** Нижняя граница заявленной производительности экскаваторов Hitachi, т/ч. */
+  excavatorTphLow: 2700,
+  /** Номинальная грузоподъёмность CAT 793, т (в источнике «240+ т»). */
+  truckPayloadT: 240,
+} as const;

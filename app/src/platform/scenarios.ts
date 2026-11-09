@@ -37,9 +37,23 @@ const clampDur = (kind: keyof typeof DUR_RANGE, v: number | undefined) => {
  * Применить сценарий к моделям. Возвращает описание для журнала или null, если команда
  * не сценарная (пауза, скорость, сброс — их обрабатывает тот, кто ведёт время).
  */
-export function applyScenario(sims: Simulation[], c: Command): string | null {
+/**
+ * Итог применения команды. `ok: false` — команда дошла, но модель её отклонила
+ * (съезд нельзя закрыть, экскаватор не в ремонте). Это не то же самое, что
+ * «команда не дошла»: во втором случае квитанции не будет вовсе.
+ */
+export interface ApplyOut {
+  ok: boolean;
+}
+
+export function applyScenario(sims: Simulation[], c: Command, out?: ApplyOut): string | null {
   const a = Number(c.arg ?? 0);
   const ref = sims[0];
+  const reject = (text: string): string => {
+    if (out) out.ok = false;
+    return text;
+  };
+  if (out) out.ok = true;
   if (!ref) return null;
   switch (c.value) {
     case 'breakdown': {
@@ -51,18 +65,18 @@ export function applyScenario(sims: Simulation[], c: Command): string | null {
     }
     case 'repair': {
       const ok = sims.map((s) => s.repairExcavator(a)).some(Boolean);
-      return ok ? `отмена поломки ${ref.excavators[a]?.name ?? a}` : `${ref.excavators[a]?.name ?? a} не в ремонте`;
+      return ok ? `отмена поломки ${ref.excavators[a]?.name ?? a}` : reject(`${ref.excavators[a]?.name ?? a} не в ремонте`);
     }
     case 'close_road': {
       const g = ref.layout.closureGroups[a];
       if (!g) return null;
       const dur = clampDur('close_road', c.dur);
       const ok = sims.map((s) => s.injectRoadClosure(a, dur * 60)).every(Boolean);
-      return ok ? `перекрыт ${g.label} на ${dur} мин` : `нельзя перекрыть ${g.label}: сеть дорог разорвётся или участок уже закрыт`;
+      return ok ? `перекрыт ${g.label} на ${dur} мин` : reject(`нельзя перекрыть ${g.label}: сеть дорог разорвётся или участок уже закрыт`);
     }
     case 'open_road': {
       const ok = sims.map((s) => s.openRoad(a)).some(Boolean);
-      return ok ? `открыт ${ref.layout.closureGroups[a]?.label ?? a}` : 'участок не был закрыт';
+      return ok ? `открыт ${ref.layout.closureGroups[a]?.label ?? a}` : reject('участок не был закрыт');
     }
     case 'power_cut': {
       const dur = clampDur('power_cut', c.dur);
@@ -120,7 +134,7 @@ export function applyScenario(sims: Simulation[], c: Command): string | null {
     }
     case 'cancel_blast': {
       const ok = sims.map((s) => s.cancelBlast(a)).some(Boolean);
-      return ok ? `отменён взрыв #${a}` : `взрыв #${a} уже завершён`;
+      return ok ? `отменён взрыв #${a}` : reject(`взрыв #${a} уже завершён`);
     }
     case 'drill_down': {
       // arg: 0 — БУ-1, 1 — БУ-2, 2 — оба станка.
@@ -133,19 +147,43 @@ export function applyScenario(sims: Simulation[], c: Command): string | null {
     }
     case 'drill_repair': {
       const ok = sims.map((s) => s.drill.repairRig(a)).some(Boolean);
-      return ok ? `отмена поломки ${ref.drill.rigs[a]?.name}` : `${ref.drill.rigs[a]?.name ?? a} не в ремонте`;
+      return ok ? `отмена поломки ${ref.drill.rigs[a]?.name}` : reject(`${ref.drill.rigs[a]?.name ?? a} не в ремонте`);
     }
-    case 'cancel_all':
+    case 'cancel_all': {
+      // Команда обещает снять всё, поэтому снимает и сценарии технологических систем:
+      // раньше отключение энергии, ливень, остановка орошения и погода её переживали,
+      // а ответ всё равно был «все сценарии отменены».
+      const cancelled = new Set<string>();
       for (const s of sims) {
-        s.drill.rigs.forEach((g) => s.drill.repairRig(g.id));
-        s.excavators.forEach((ex) => s.repairExcavator(ex.id));
-        s.layout.closureGroups.forEach((_, g) => s.openRoad(g));
-        s.blasts.filter((b) => b.phase === 'warning' || b.phase === 'active').forEach((b) => s.cancelBlast(b.id));
-        s.fuelDepot.supplyCutLeft = 0;
-        if (s.repairShop.tyreCutLeft > 0) s.repairShop.tyreCutLeft = 1;
-        if (s.checkpoint.closedLeft > 0) s.checkpoint.closedLeft = 1;
+        s.drill.rigs.forEach((g) => { if (s.drill.repairRig(g.id)) cancelled.add('поломка буровой'); });
+        s.excavators.forEach((ex) => { if (s.repairExcavator(ex.id)) cancelled.add('поломка экскаватора'); });
+        s.layout.closureGroups.forEach((_, g) => { if (s.openRoad(g)) cancelled.add('перекрытие съезда'); });
+        s.blasts.filter((b) => b.phase === 'warning' || b.phase === 'active').forEach((b) => { if (s.cancelBlast(b.id)) cancelled.add('взрыв'); });
+        if (s.fuelDepot.supplyCutLeft > 0) { s.fuelDepot.supplyCutLeft = 0; cancelled.add('перебои с топливом'); }
+        if (s.repairShop.tyreCutLeft > 0) { s.repairShop.tyreCutLeft = 1; cancelled.add('нет шин'); }
+        if (s.checkpoint.closedLeft > 0) { s.checkpoint.closedLeft = 1; cancelled.add('закрытый КПП'); }
+        if (s.powerCutLeft > 0) {
+          s.powerCutLeft = 0;
+          s.addLog('Отключение энергии снято вручную: фабрика, дробилка и электролиз запускаются', 'info');
+          cancelled.add('отключение энергии');
+        }
+        if (s.tailings.stormLeft > 0) {
+          s.tailings.stormLeft = 0;
+          s.tailings.stormM3h = 0;
+          cancelled.add('приток воды в хвостохранилище');
+        }
+        if (s.leach.holdLeft > 0) {
+          s.leach.holdLeft = 0;
+          s.addLog('Орошение карт возобновлено', 'info');
+          cancelled.add('остановка орошения');
+        }
+        if (s.weather.forcedLeft > 0) {
+          s.weather.forcedLeft = 0;
+          cancelled.add('вызванная непогода');
+        }
       }
-      return 'все сценарии отменены';
+      return cancelled.size ? `отменено: ${[...cancelled].join(', ')}` : reject('активных сценариев не было');
+    }
     default:
       return null;
   }

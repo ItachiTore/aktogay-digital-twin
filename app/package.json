@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "bench": "tsx scripts/bench.ts",
-    "sensors": "tsx scripts/sensors-md.ts"
+    "sensors": "tsx scripts/sensors-md.ts",
+    "calibrate": "tsx scripts/calibrate.ts"
   },
   "dependencies": {
     "leaflet": "^1.9.4",

@@ -11,7 +11,7 @@
  */
 import mqtt from 'mqtt';
 import { computeKpis, fetchObservation, LIVE_EVERY_MS, Simulation, type Observation, type StrategyName } from '../src/sim';
-import { activeScenarioLabels, applyScenario, type Command } from '../src/platform/scenarios';
+import { activeScenarioLabels, applyScenario, type ApplyOut, type Command } from '../src/platform/scenarios';
 import { defaultFleet, fleetConfig, sanitizeFleet, type Fleet } from '../src/platform/fleet';
 import { applyDispatch, DISPATCH_COMMANDS, emptyDispatch, type DispatchCommand } from '../src/platform/dispatch';
 import { CONTROL_ID, SITE_NS, serializeShift, thingIds, serializeAll, siteDefinitions, thingDefinitions, VARIANTS, type Features, type ThingBody } from '../src/platform/twins';
@@ -46,6 +46,12 @@ let commandSeq = -1;
 /** Диспетчерская смены: приказы, сообщения водителям, ответы (только реальный карьер). */
 let dispatch = emptyDispatch();
 let lastScenario = 'нет';
+/**
+ * Квитанция на последнюю команду. Без неё нельзя отличить «команда не дошла по каналу
+ * Ditto→MQTT» от «дошла и была отклонена»: и там и там признаки сценария остаются нулевыми.
+ * Отправитель читает `status.last_command` и сверяет `seq` со своим.
+ */
+let lastCommand: Record<string, unknown> = { seq: -1, value: 'none', result: 'none' };
 /** Последние выполненные команды для раздела «Сценарии»: [время модели, с; описание]. */
 const history: [number, string][] = [];
 
@@ -143,6 +149,7 @@ function publishStatus(): void {
         finished: s.finished,
         active_scenarios: active,
         last_scenario: lastScenario,
+        last_command: lastCommand,
         history_log: history.map(([t, text]) => `${t}|${text}`),
       },
     },
@@ -163,15 +170,31 @@ function publishDispatch(): void {
 
 // ───────────────────────────── сценарии «что если» ─────────────────────────────
 
+/** Квитанция: что пришло, что с этим стало и в какой момент модельного времени. */
+function ack(c: Command, result: 'ok' | 'rejected' | 'unknown', detail: string): Record<string, unknown> {
+  return {
+    seq: Number(c.seq ?? 0),
+    value: String(c.value),
+    arg: c.arg ?? null,
+    dur: c.dur ?? null,
+    result,
+    detail,
+    sim_time: Math.round(sims.smart.now),
+    at: new Date().toISOString(),
+  };
+}
+
 async function applyCommand(c: Command): Promise<void> {
   if (DISPATCH_COMMANDS.has(c.value)) {
     // Приказ диспетчера или ответ водителя — только реальному карьеру (теневой расчёт — «как без системы»).
     const done = applyDispatch(dispatch, sims.smart, c as unknown as DispatchCommand);
+    lastCommand = ack(c, done ? 'ok' : 'rejected', done ?? 'приказ отклонён');
     log(`диспетчерская: ${c.value} → ${done ?? 'отклонено'}`);
     publishAll();
     return;
   }
-  const text = applyScenario(VARIANTS.map((v) => sims[v]), c);
+  const out: ApplyOut = { ok: true };
+  const text = applyScenario(VARIANTS.map((v) => sims[v]), c, out);
   if (text) lastScenario = text;
   switch (c.value) {
     case 'pause':
@@ -198,13 +221,21 @@ async function applyCommand(c: Command): Promise<void> {
       break;
     }
     default:
-      if (!text) return;
+      if (!text) {
+        // Команда дошла, но такой команды нет. Молчать нельзя: отправитель не отличит
+        // это от потери в канале.
+        lastCommand = ack(c, 'unknown', `команда «${c.value}» не поддерживается`);
+        log(`команда: ${c.value} ${c.arg ?? ''} → не поддерживается`);
+        publishStatus();
+        return;
+      }
   }
   if (text || c.value === 'reset') {
     history.push([Math.round(sims.smart.now), lastScenario]);
     if (history.length > 30) history.shift();
   }
-  log(`команда: ${c.value} ${c.arg ?? ''} → ${lastScenario}`);
+  lastCommand = ack(c, out.ok ? 'ok' : 'rejected', text ?? lastScenario);
+  log(`команда: ${c.value} ${c.arg ?? ''} → ${out.ok ? '' : 'отклонена: '}${lastScenario}`);
   publishAll();
   publishShift();
 }

@@ -623,8 +623,10 @@ export function serializeExcavator(sim: Simulation, i: number): Features {
 
 export function serializeCrusher(sim: Simulation): Features {
   const c = sim.crusher;
+  const cut = sim.powerCutLeft > 0;
   return {
-    state: f(sim.stockpile.crushing ? 'crushing' : c.active.length > 0 ? 'receiving' : 'waiting'),
+    // Без электричества дробилка не дробит, что бы ни лежало в бункере: приёмка идёт, а дробление нет.
+    state: f(cut ? 'no_power' : sim.stockpile.crushing ? 'crushing' : c.active.length > 0 ? 'receiving' : 'waiting'),
     bin: f(Math.round(c.binT), 't'),
     bin_cu: f(r3(c.binCuT), 't'),
     bin_grade: f(r3(sim.binGrade), '% Cu'),
@@ -638,9 +640,13 @@ export function serializeCrusher(sim: Simulation): Features {
 
 export function serializePlant(sim: Simulation): Features {
   const st = sim.stats;
+  const cut = sim.powerCutLeft > 0;
+  const starved = sim.stockpile.t <= 0.01;
   return {
-    state: f(sim.stockpile.t <= 0.01 ? 'stopped' : 'running'),
-    feed_rate: f(sim.stockpile.t <= 0.01 ? 0 : sim.cfg.dumps.crusher.plantFeedTpm * 60, 't/h'),
+    // Признаки обязаны совпадать с тем, что происходит: обесточенная фабрика не «running»,
+    // и подача у неё нулевая, даже когда склад полон.
+    state: f(cut ? 'no_power' : starved ? 'stopped' : 'running'),
+    feed_rate: f(cut || starved ? 0 : sim.cfg.dumps.crusher.plantFeedTpm * 60, 't/h'),
     feed_grade: f(r3(sim.feedGrade), '% Cu'),
     feed_total: f(Math.round(st.plantFeedT), 't'),
     cu_feed: f(r1(st.cuFeedT), 't'),

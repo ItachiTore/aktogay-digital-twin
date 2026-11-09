@@ -26,7 +26,8 @@
 | [`presentation/narration/`](presentation/narration/) | Тексты озвучки и скрипты, которыми собраны ролики |
 
 Подробности по приложению — в [`app/README.md`](app/README.md), по датчикам — в
-[`app/SENSORS.md`](app/SENSORS.md), сравнение стратегий — в [`app/BENCHMARK.md`](app/BENCHMARK.md).
+[`app/SENSORS.md`](app/SENSORS.md), сравнение стратегий — в [`app/BENCHMARK.md`](app/BENCHMARK.md),
+сверка с опубликованными показателями рудника — в [`app/CALIBRATION.md`](app/CALIBRATION.md).
 
 ## Запуск без платформы
 

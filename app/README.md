@@ -15,6 +15,7 @@ npm install
 npm run dev        # http://localhost:5173
 npm test           # тесты движка (Vitest)
 npm run bench      # бенчмарк стратегий → BENCHMARK.md
+npm run calibrate  # сверка с опубликованными показателями Актогая → CALIBRATION.md
 npm run build      # продакшен-сборка в dist/
 ```
 
